@@ -1,0 +1,82 @@
+---
+- name: Set Up Docker
+  hosts: Docker
+  remote_user: ubuntu
+  become: Yes
+  become_method: sudo 
+  tasks:
+    - name: Install Docker
+      package:
+       name: docker
+       state: present
+
+    - name: Install Docker IO
+      package:
+        name: docker.io
+        state: present
+
+    - name: Make Docker Directory
+      shell: mkdir /docker
+
+    - name: Make Apache Docker Directory
+      shell: mkdir /docker/apachedocker
+
+    - name: Copy Apache dockerfile over
+      copy:
+        src: /docker/apachedocker/dockerfile
+        dst: /docker/apachedocker/dockerfile
+
+    - name: Copy Apache Docker script over
+      copy:
+        src: /docker/apachedocker/startup.sh
+        dst: /docker/apachedocker/startup.sh
+
+    - name: Copy Apache Configuration file 
+      copy:
+        src: /docker/apachedocker/apache.conf
+        dst: /docker/apachedocker/apache.conf
+
+    - name: Copy Apache Site Configuration File
+      copy:
+        src: /docker/apachedocker/apache-site.conf
+        dst: /docker/apachedocker/apache-site.conf
+
+    - name: Build Apache Docker
+      docker_image:
+         path: /docker/apachedocker
+         name: webimage
+
+    - name: Run Apache Docker Image
+      docker_container:
+         name: web
+         image: webimage
+         state: started
+         ports: 
+         - "8080:80"
+         - "8443:443"
+         tty: true
+         detach: true
+
+    - name: Make Mod Sec Docker Directory
+      shell: mkdir /docker/modsecdocker
+
+    - name: Copy Over Mod Security Docker
+      copy:
+        src: /docker/modsecdocker/dockerfile
+        dst: /docker/modsecdocker/dockerfile
+
+    - name: Build Mod Sec Docker Image
+      docker_image:
+         path: /docker/modsecdocker
+         name: modsecimage
+   
+    - name: Run Mod Sec Docker Containeere
+      docker_container:
+         name: modsec
+         image: modsecimage
+         state: started
+         ports:
+         - "80:80"
+         tty: true
+         detach: true
+      
